@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Three.js with Centered Text and Particles</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://threejs.org/examples/js/fonts/helvetiker_regular.typeface.json"></script>
+    <script>
+        // Set up the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Set the background color
+        scene.background = new THREE.Color(0x000000); // Black background
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(10, 10, 10); // Position the light to improve illumination
+        scene.add(directionalLight);
+        
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight2.position.set(-10, -10, -10); // Add another light from a different direction
+        scene.add(directionalLight2);
+
+        // Load font and create floating metallic text
+        const loader = new THREE.FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+            const textGeometry = new THREE.TextGeometry('Hello Three.js', {
+                font: font,
+                size: 1,
+                height: 0.2,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.1,
+                bevelOffset: 0,
+                bevelSegments: 5
+            });
+
+            // Create a metallic material for the text with high visibility
+            const textMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff, // Base color set to white
+                metalness: 0.5, // High metallic effect
+                roughness: .1 // Low roughness for a shiny effect
+            });
+
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+            // Center the text
+            textGeometry.computeBoundingBox();
+            textGeometry.center();
+            scene.add(textMesh);
+
+            // Add OrbitControls
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.copy(textMesh.position); // Set target to text position
+            controls.update(); // Update controls
+            
+            // Adjust the camera position to fit the text
+            camera.position.z = 5;
+        });
+
+        // Create particle system for a starry background
+
+
+
+
+        const particleCount = 5000;
+ 
+        const particles = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = new Float32Array(particleCount * 3); // Array for particle velocities
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = Math.random() * 200 - 100; // X
+            positions[i * 3 + 1] = Math.random() * 200 - 100; // Y
+            positions[i * 3 + 2] = Math.random() * 200 - 100; // Z
+
+            // Set random velocities
+            velocities[i * 3] = Math.random() * 0.05 - 0.025; // Random X velocity
+            velocities[i * 3 + 1] = Math.random() * 0.05 - 0.025; // Random Y velocity
+            velocities[i * 3 + 2] = Math.random() * 0.05 - 0.025; // Random Z velocity
+        }
+
+        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, sizeAttenuation: true }); // Set particles to white and round
+        const particleSystem = new THREE.Points(particles, particleMaterial);
+        scene.add(particleSystem);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Move particles
+            const positions = particles.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] += velocities[i * 3]; // Update X position
+                positions[i * 3 + 1] += velocities[i * 3 + 1]; // Update Y position
+                positions[i * 3 + 2] += velocities[i * 3 + 2]; // Update Z position
+
+                // Make particles wrap around the screen
+                if (positions[i * 3] < -100 || positions[i * 3] > 100) {
+                    positions[i * 3] = Math.random() * 200 - 100; // Reset X position
+                }
+                if (positions[i * 3 + 1] < -100 || positions[i * 3 + 1] > 100) {
+                    positions[i * 3 + 1] = Math.random() * 200 - 100; // Reset Y position
+                }
+                if (positions[i * 3 + 2] < -100 || positions[i * 3 + 2] > 100) {
+                    positions[i * 3 + 2] = Math.random() * 200 - 100; // Reset Z position
+                }
+            }
+            particles.attributes.position.needsUpdate = true; // Inform Three.js that positions have changed
+
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
